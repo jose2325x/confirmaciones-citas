@@ -10,7 +10,7 @@
             margin-top: 50px;
         }
         .boton-confirmar {
-            background-color: #28a745;
+            background-color: #28a745; 
             color: white;
             padding: 12px 25px;
             border: none;
@@ -25,10 +25,11 @@
     <h2>✅ Confirmación de Cita</h2>
     <p>Haz clic en el botón para confirmar tu asistencia.</p>
 
-    <!-- Botón que redirige a tu webhook -->
-    <a href="https://drive.google.com/file/d/1NgOjhGyWFM5r4KoyRwXMkGsFke0hNJoi/view?usp=sharing&cita_id=GCD0000084&accion=CONFIRMAR" target="_blank">
-  Confirmar Cita
-</a>
+    <!-- Botón de redirección -->
+    <a href="#" class="boton-confirmar">Confirmar Cita</a>
 
+    <!-- Llama al webhook de Power Automate -->
+    <img src="https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE&cita_id=@{triggerOutputs()['queries']['cita_id']}&accion=@{triggerOutputs()['queries']['accion']}"
+         style="display:none;" />
 </body>
 </html>
