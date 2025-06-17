@@ -61,7 +61,8 @@
     // Obtener todos los parámetros
     var cita_id = getUrlParameter('cita_id');
     var accion = getUrlParameter('accion').toUpperCase();
-    var email = getUrlParameter('email'); // 👈 Añadimos el email
+    var email = getUrlParameter('email');
+    var nombreProveedor = getUrlParameter('nombreProveedor');
 
     var titulo = document.getElementById("mensaje-titulo");
     var detalle = document.getElementById("mensaje-detalle");
@@ -91,7 +92,11 @@
 
     // Disparar webhook solo si hay cita_id y accion válida
     if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
-        var webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE&cita_id=' + encodeURIComponent(cita_id) + '&accion=' + encodeURIComponent(accion) + '&email=' + encodeURIComponent(email);
+        var webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE' +
+            '&cita_id=' + encodeURIComponent(cita_id) +
+            '&accion=' + encodeURIComponent(accion) +
+            '&email=' + encodeURIComponent(email) +
+            '&nombreProveedor=' + encodeURIComponent(nombreProveedor);
 
         document.getElementById('webhook-trigger').src = webhookUrl;
     }
