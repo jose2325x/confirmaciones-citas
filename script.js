@@ -50,5 +50,5 @@ if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
     setTimeout(function() {
         // Redirigir a la misma página pero sin parámetros
         window.location.href = window.location.pathname;
-    }, 2000); // 2 segundos de delay
+    }, 1000); // 2 segundos de delay
 }
