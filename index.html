@@ -4,52 +4,79 @@
 <meta charset="UTF-8">
 <title>Acción de Cita</title>
 <style>
+
         body {
+
             font-family: Arial, sans-serif;
+
             text-align: center;
+
             margin-top: 100px;
+
             padding-bottom: 60px;
+
         }
+
         h2.confirmado { color: green; }
+
         h2.cancelado { color: red; }
+
         h2.reprogramado { color: orange; }
+
         p { font-size: 1.1em; }
+
         .footer {
+
             position: fixed;
+
             bottom: 0;
+
             width: 100%;
+
             background-color: #f9f9f9;
+
             padding: 10px 0;
+
             text-align: center;
+
         }
+
         .footer img {
+
             max-width: 150px;
+
             height: auto;
+
         }
+
         .loading {
+
             display: inline-block;
+
             width: 20px;
+
             height: 20px;
+
             border: 3px solid #f3f3f3;
+
             border-top: 3px solid #3498db;
+
             border-radius: 50%;
+
             animation: spin 1s linear infinite;
+
         }
+
         @keyframes spin {
+
             0% { transform: rotate(0deg); }
+
             100% { transform: rotate(360deg); }
+
         }
 </style>
 </head>
 <body>
- 
-    <!-- Formulario oculto para capturar datos POST -->
-<form name="cita-action" netlify hidden>
-<input type="text" name="cita_id" />
-<input type="text" name="accion" />
-<input type="text" name="email" />
-<input type="text" name="nombreProveedor" />
-</form>
  
     <!-- Mensaje dinámico -->
 <h2 id="mensaje-titulo">Cargando...</h2>
@@ -62,99 +89,217 @@
 </div>
  
     <script>
-        // Función para obtener parámetros de URL
+
         function getUrlParameter(name) {
+
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+
             var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+
             var results = regex.exec(location.search);
+
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+
         }
  
-        // Función para detectar si viene de POST
-        function getPostData() {
-            // Netlify redirige a la misma página después de POST
-            // Los datos están en la URL después del redirect
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('cita_id') && urlParams.has('accion')) {
-                return {
-                    cita_id: urlParams.get('cita_id'),
-                    accion: urlParams.get('accion'),
-                    email: urlParams.get('email'),
-                    nombreProveedor: urlParams.get('nombreProveedor')
-                };
+        // Función para obtener datos del hash (método alternativo para POST)
+
+        function getDataFromHash() {
+
+            if (window.location.hash) {
+
+                try {
+
+                    const hashData = JSON.parse(decodeURIComponent(window.location.hash.substring(1)));
+
+                    return hashData;
+
+                } catch (e) {
+
+                    return null;
+
+                }
+
             }
+
             return null;
+
         }
  
-        // Obtener datos
-        var data = getPostData();
+        // Función para obtener datos de sessionStorage
+
+        function getDataFromSession() {
+
+            const data = sessionStorage.getItem('citaData');
+
+            if (data) {
+
+                sessionStorage.removeItem('citaData');
+
+                return JSON.parse(data);
+
+            }
+
+            return null;
+
+        }
+ 
+        // Intentar obtener datos de múltiples fuentes
+
+        var hashData = getDataFromHash();
+
+        var sessionData = getDataFromSession();
+
         var cita_id, accion, email, nombreProveedor;
  
-        if (data) {
-            cita_id = data.cita_id;
-            accion = data.accion ? data.accion.toUpperCase() : '';
-            email = data.email;
-            nombreProveedor = data.nombreProveedor;
+        if (hashData && hashData.cita_id) {
+
+            // Datos del hash
+
+            cita_id = hashData.cita_id;
+
+            accion = hashData.accion ? hashData.accion.toUpperCase() : '';
+
+            email = hashData.email;
+
+            nombreProveedor = hashData.nombreProveedor;
+
+        } else if (sessionData && sessionData.cita_id) {
+
+            // Datos de sessionStorage
+
+            cita_id = sessionData.cita_id;
+
+            accion = sessionData.accion ? sessionData.accion.toUpperCase() : '';
+
+            email = sessionData.email;
+
+            nombreProveedor = sessionData.nombreProveedor;
+
         } else {
-            // Fallback a parámetros GET tradicionales
+
+            // Fallback a parámetros GET
+
             cita_id = getUrlParameter('cita_id');
+
             accion = getUrlParameter('accion').toUpperCase();
+
             email = getUrlParameter('email');
+
             nombreProveedor = getUrlParameter('nombreProveedor');
+
         }
  
         var titulo = document.getElementById("mensaje-titulo");
+
         var detalle = document.getElementById("mensaje-detalle");
+
         var pageTitle = document.querySelector("title");
+
         var loading = document.getElementById("loading");
  
         // Mostrar mensaje según la acción
+
         if (accion === 'CONFIRMAR') {
+
             titulo.textContent = "✅ Gracias por confirmar";
+
             titulo.className = "confirmado";
+
             detalle.textContent = "Tu cita ha sido confirmada exitosamente.";
+
             pageTitle.textContent = "Cita Confirmada - DINET";
+
         } else if (accion === 'CANCELAR') {
+
             titulo.textContent = "❌ Cita Cancelada";
+
             titulo.className = "cancelado";
+
             detalle.textContent = "Tu cita ha sido cancelada.";
+
             pageTitle.textContent = "Cita Cancelada - DINET";
+
         } else if (accion === 'REPROGRAMAR') {
+
             titulo.textContent = "🔄 Solicitud de Reprogramación";
+
             titulo.className = "reprogramado";
+
             detalle.textContent = "Hemos recibido tu solicitud de reprogramación.";
+
             pageTitle.textContent = "Reprogramar Cita - DINET";
+
         } else {
+
             titulo.textContent = "⚠️ Acción no reconocida";
+
             titulo.className = "";
+
             detalle.textContent = "No se pudo identificar la acción realizada.";
+
             pageTitle.textContent = "Acción no válida - DINET";
+
         }
  
-        // Enviar webhook si hay datos válidos
+        // Enviar webhook
+
         if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
+
             loading.style.display = 'inline-block';
-            // Construir URL del webhook con parámetros GET (como tu script original)
+
             var webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE' +
+
                 '&cita_id=' + encodeURIComponent(cita_id) +
+
                 '&accion=' + encodeURIComponent(accion) +
-                '&email=' + encodeURIComponent(email) +
-                '&nombreProveedor=' + encodeURIComponent(nombreProveedor);
+
+                '&email=' + encodeURIComponent(email || '') +
+
+                '&nombreProveedor=' + encodeURIComponent(nombreProveedor || '');
  
-            // Usar imagen invisible para disparar webhook (método original)
             var img = document.createElement('img');
+
             img.style.display = 'none';
+
             img.onload = function() {
+
                 loading.style.display = 'none';
+
                 console.log('Webhook enviado exitosamente');
+
             };
+
             img.onerror = function() {
+
                 loading.style.display = 'none';
+
                 console.log('Webhook enviado (error de CORS es normal)');
+
             };
+
             img.src = webhookUrl;
+
             document.body.appendChild(img);
+
         }
+ 
+        // Debug: Mostrar información en consola
+
+        console.log('Datos detectados:', {
+
+            cita_id: cita_id,
+
+            accion: accion,
+
+            email: email,
+
+            nombreProveedor: nombreProveedor,
+
+            source: hashData ? 'hash' : sessionData ? 'session' : 'url'
+
+        });
 </script>
 </body>
 </html>
+ 
