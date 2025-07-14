@@ -1,27 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Acción de Cita</title>
-    <style>
+<meta charset="UTF-8">
+<title>Acción de Cita</title>
+<style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 100px;
             padding-bottom: 60px;
         }
-        h2.confirmado {
-            color: green;
-        }
-        h2.cancelado {
-            color: red;
-        }
-        h2.reprogramado {
-            color: orange;
-        }
-        p {
-            font-size: 1.1em;
-        }
+        h2.confirmado { color: green; }
+        h2.cancelado { color: red; }
+        h2.reprogramado { color: orange; }
+        p { font-size: 1.1em; }
         .footer {
             position: fixed;
             bottom: 0;
@@ -47,64 +39,75 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-    </style>
+</style>
 </head>
 <body>
-
+ 
+    <!-- Formulario oculto para capturar datos POST -->
+<form name="cita-action" netlify hidden>
+<input type="text" name="cita_id" />
+<input type="text" name="accion" />
+<input type="text" name="email" />
+<input type="text" name="nombreProveedor" />
+</form>
+ 
     <!-- Mensaje dinámico -->
-    <h2 id="mensaje-titulo">Cargando...</h2>
-    <p id="mensaje-detalle"></p>
-    <div id="loading" class="loading" style="display:none;"></div>
-
+<h2 id="mensaje-titulo">Cargando...</h2>
+<p id="mensaje-detalle"></p>
+<div id="loading" class="loading" style="display:none;"></div>
+ 
     <!-- Footer con logo -->
-    <div class="footer">
-        <img src="https://www.dinet.com.pe/img/logo-dinet.png" alt="Dinet Logo">
-    </div>
-
+<div class="footer">
+<img src="https://www.dinet.com.pe/img/logo-dinet.png" alt="Dinet Logo">
+</div>
+ 
     <script>
-        // Función para obtener parámetros de la URL (GET)
+        // Función para obtener parámetros de URL
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
             var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
             var results = regex.exec(location.search);
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
-
-        // Función para obtener datos del formulario POST
+ 
+        // Función para detectar si viene de POST
         function getPostData() {
-            // Si la página fue cargada por POST, los datos estarán en sessionStorage
-            // (los ponemos ahí desde el formulario)
-            const postData = sessionStorage.getItem('postData');
-            if (postData) {
-                sessionStorage.removeItem('postData'); // Limpiar después de usar
-                return JSON.parse(postData);
+            // Netlify redirige a la misma página después de POST
+            // Los datos están en la URL después del redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('cita_id') && urlParams.has('accion')) {
+                return {
+                    cita_id: urlParams.get('cita_id'),
+                    accion: urlParams.get('accion'),
+                    email: urlParams.get('email'),
+                    nombreProveedor: urlParams.get('nombreProveedor')
+                };
             }
             return null;
         }
-
-        // Intentar obtener datos de POST primero, luego de GET
-        var postData = getPostData();
+ 
+        // Obtener datos
+        var data = getPostData();
         var cita_id, accion, email, nombreProveedor;
-
-        if (postData) {
-            // Datos del POST
-            cita_id = postData.cita_id;
-            accion = postData.accion ? postData.accion.toUpperCase() : '';
-            email = postData.email;
-            nombreProveedor = postData.nombreProveedor;
+ 
+        if (data) {
+            cita_id = data.cita_id;
+            accion = data.accion ? data.accion.toUpperCase() : '';
+            email = data.email;
+            nombreProveedor = data.nombreProveedor;
         } else {
-            // Fallback a GET (para compatibilidad)
+            // Fallback a parámetros GET tradicionales
             cita_id = getUrlParameter('cita_id');
             accion = getUrlParameter('accion').toUpperCase();
             email = getUrlParameter('email');
             nombreProveedor = getUrlParameter('nombreProveedor');
         }
-
+ 
         var titulo = document.getElementById("mensaje-titulo");
         var detalle = document.getElementById("mensaje-detalle");
         var pageTitle = document.querySelector("title");
         var loading = document.getElementById("loading");
-
+ 
         // Mostrar mensaje según la acción
         if (accion === 'CONFIRMAR') {
             titulo.textContent = "✅ Gracias por confirmar";
@@ -127,61 +130,31 @@
             detalle.textContent = "No se pudo identificar la acción realizada.";
             pageTitle.textContent = "Acción no válida - DINET";
         }
-
-        // Enviar datos por POST al webhook
+ 
+        // Enviar webhook si hay datos válidos
         if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
             loading.style.display = 'inline-block';
-            
-            // Enviar POST al webhook de Azure Logic Apps
-            const webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE';
-            
-            fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    cita_id: cita_id,
-                    accion: accion,
-                    email: email,
-                    nombreProveedor: nombreProveedor
-                })
-            })
-            .then(response => {
+            // Construir URL del webhook con parámetros GET (como tu script original)
+            var webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE' +
+                '&cita_id=' + encodeURIComponent(cita_id) +
+                '&accion=' + encodeURIComponent(accion) +
+                '&email=' + encodeURIComponent(email) +
+                '&nombreProveedor=' + encodeURIComponent(nombreProveedor);
+ 
+            // Usar imagen invisible para disparar webhook (método original)
+            var img = document.createElement('img');
+            img.style.display = 'none';
+            img.onload = function() {
                 loading.style.display = 'none';
-                if (response.ok) {
-                    console.log('Webhook enviado exitosamente');
-                } else {
-                    console.warn('Error al enviar webhook:', response.status);
-                }
-            })
-            .catch(error => {
+                console.log('Webhook enviado exitosamente');
+            };
+            img.onerror = function() {
                 loading.style.display = 'none';
-                console.error('Error al enviar webhook:', error);
-            });
+                console.log('Webhook enviado (error de CORS es normal)');
+            };
+            img.src = webhookUrl;
+            document.body.appendChild(img);
         }
-
-        // Script para manejar formularios POST en el correo
-        // Este script debe ejecutarse cuando la página carga desde un formulario
-        window.addEventListener('load', function() {
-            // Si hay datos en el hash (método alternativo)
-            if (window.location.hash) {
-                try {
-                    const hashData = JSON.parse(decodeURIComponent(window.location.hash.substring(1)));
-                    if (hashData.cita_id) {
-                        cita_id = hashData.cita_id;
-                        accion = hashData.accion ? hashData.accion.toUpperCase() : '';
-                        email = hashData.email;
-                        nombreProveedor = hashData.nombreProveedor;
-                        
-                        // Reejecutar la lógica de mostrar mensaje
-                        // (Código repetido intencionalmente para simplificar)
-                    }
-                } catch (e) {
-                    console.error('Error parsing hash data:', e);
-                }
-            }
-        });
-    </script>
+</script>
 </body>
 </html>
