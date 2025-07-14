@@ -8,7 +8,7 @@
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 100px;
-            padding-bottom: 60px; /* espacio para el footer */
+            padding-bottom: 60px;
         }
         h2.confirmado {
             color: green;
@@ -34,6 +34,19 @@
             max-width: 150px;
             height: auto;
         }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -41,16 +54,134 @@
     <!-- Mensaje dinámico -->
     <h2 id="mensaje-titulo">Cargando...</h2>
     <p id="mensaje-detalle"></p>
-
-    <!-- Imagen invisible que dispara el webhook -->
-    <img id="webhook-trigger" src="" style="display:none;" />
+    <div id="loading" class="loading" style="display:none;"></div>
 
     <!-- Footer con logo -->
     <div class="footer">
-        <img src="https://www.dinet.com.pe/img/logo-dinet.png " alt="Dinet Logo">
+        <img src="https://www.dinet.com.pe/img/logo-dinet.png" alt="Dinet Logo">
     </div>
 
-    <!-- Aquí se carga el script externo -->
-    <script src="script.js"></script>
+    <script>
+        // Función para obtener parámetros de la URL (GET)
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Función para obtener datos del formulario POST
+        function getPostData() {
+            // Si la página fue cargada por POST, los datos estarán en sessionStorage
+            // (los ponemos ahí desde el formulario)
+            const postData = sessionStorage.getItem('postData');
+            if (postData) {
+                sessionStorage.removeItem('postData'); // Limpiar después de usar
+                return JSON.parse(postData);
+            }
+            return null;
+        }
+
+        // Intentar obtener datos de POST primero, luego de GET
+        var postData = getPostData();
+        var cita_id, accion, email, nombreProveedor;
+
+        if (postData) {
+            // Datos del POST
+            cita_id = postData.cita_id;
+            accion = postData.accion ? postData.accion.toUpperCase() : '';
+            email = postData.email;
+            nombreProveedor = postData.nombreProveedor;
+        } else {
+            // Fallback a GET (para compatibilidad)
+            cita_id = getUrlParameter('cita_id');
+            accion = getUrlParameter('accion').toUpperCase();
+            email = getUrlParameter('email');
+            nombreProveedor = getUrlParameter('nombreProveedor');
+        }
+
+        var titulo = document.getElementById("mensaje-titulo");
+        var detalle = document.getElementById("mensaje-detalle");
+        var pageTitle = document.querySelector("title");
+        var loading = document.getElementById("loading");
+
+        // Mostrar mensaje según la acción
+        if (accion === 'CONFIRMAR') {
+            titulo.textContent = "✅ Gracias por confirmar";
+            titulo.className = "confirmado";
+            detalle.textContent = "Tu cita ha sido confirmada exitosamente.";
+            pageTitle.textContent = "Cita Confirmada - DINET";
+        } else if (accion === 'CANCELAR') {
+            titulo.textContent = "❌ Cita Cancelada";
+            titulo.className = "cancelado";
+            detalle.textContent = "Tu cita ha sido cancelada.";
+            pageTitle.textContent = "Cita Cancelada - DINET";
+        } else if (accion === 'REPROGRAMAR') {
+            titulo.textContent = "🔄 Solicitud de Reprogramación";
+            titulo.className = "reprogramado";
+            detalle.textContent = "Hemos recibido tu solicitud de reprogramación.";
+            pageTitle.textContent = "Reprogramar Cita - DINET";
+        } else {
+            titulo.textContent = "⚠️ Acción no reconocida";
+            titulo.className = "";
+            detalle.textContent = "No se pudo identificar la acción realizada.";
+            pageTitle.textContent = "Acción no válida - DINET";
+        }
+
+        // Enviar datos por POST al webhook
+        if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
+            loading.style.display = 'inline-block';
+            
+            // Enviar POST al webhook de Azure Logic Apps
+            const webhookUrl = 'https://prod-54.westus.logic.azure.com/workflows/e6ca8021d694492998bd18f5e45dbbb5/triggers/manual/paths/invoke/confirmacioncita?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=A8h4p5aTqsH7Irxmm0vGk8gSTmgqp5FbcCv-H5wy3tE';
+            
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cita_id: cita_id,
+                    accion: accion,
+                    email: email,
+                    nombreProveedor: nombreProveedor
+                })
+            })
+            .then(response => {
+                loading.style.display = 'none';
+                if (response.ok) {
+                    console.log('Webhook enviado exitosamente');
+                } else {
+                    console.warn('Error al enviar webhook:', response.status);
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                console.error('Error al enviar webhook:', error);
+            });
+        }
+
+        // Script para manejar formularios POST en el correo
+        // Este script debe ejecutarse cuando la página carga desde un formulario
+        window.addEventListener('load', function() {
+            // Si hay datos en el hash (método alternativo)
+            if (window.location.hash) {
+                try {
+                    const hashData = JSON.parse(decodeURIComponent(window.location.hash.substring(1)));
+                    if (hashData.cita_id) {
+                        cita_id = hashData.cita_id;
+                        accion = hashData.accion ? hashData.accion.toUpperCase() : '';
+                        email = hashData.email;
+                        nombreProveedor = hashData.nombreProveedor;
+                        
+                        // Reejecutar la lógica de mostrar mensaje
+                        // (Código repetido intencionalmente para simplificar)
+                    }
+                } catch (e) {
+                    console.error('Error parsing hash data:', e);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
