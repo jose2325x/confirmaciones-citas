@@ -1,0 +1,13 @@
+
+[build]
+  publish = "."
+
+# Redirección para todas las páginas
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Configuración específica para formularios
+[build.environment]
+  NODE_VERSION = "18"
