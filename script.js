@@ -45,5 +45,12 @@ if (cita_id && ['CONFIRMAR', 'CANCELAR', 'REPROGRAMAR'].includes(accion)) {
         '&email=' + encodeURIComponent(email) +
         '&nombreProveedor=' + encodeURIComponent(nombreProveedor);
 
-    document.getElementById('webhook-trigger').src = webhookUrl;
+    var webhookImage = document.getElementById('webhook-trigger');
+    webhookImage.src = webhookUrl;
+    
+    // Hacer refresh de la página después de un breve delay para asegurar que el webhook se ejecute
+    setTimeout(function() {
+        // Redirigir a la misma página pero sin parámetros
+        window.location.href = window.location.pathname;
+    }, 2000); // 2 segundos de delay
 }
