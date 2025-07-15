@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acción de Cita</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+            padding-bottom: 60px; /* espacio para el footer */
+        }
+        h2.confirmado {
+            color: green;
+        }
+        h2.cancelado {
+            color: red;
+        }
+        h2.reprogramado {
+            color: orange;
+        }
+        p {
+            font-size: 1.1em;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f9f9f9;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .footer img {
+            max-width: 150px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mensaje dinámico -->
+    <h2 id="mensaje-titulo">Cargando...</h2>
+    <p id="mensaje-detalle"></p>
+
+    <!-- Imagen invisible que dispara el webhook -->
+    <img id="webhook-trigger" src="" style="display:none;" />
+
+    <!-- Footer con logo -->
+    <div class="footer">
+        <img src="https://www.dinet.com.pe/img/logo-dinet.png " alt="Dinet Logo">
+    </div>
+
+    <!-- Aquí se carga el script externo -->
+    <script src="script.js"></script>
+</body>
+</html>
